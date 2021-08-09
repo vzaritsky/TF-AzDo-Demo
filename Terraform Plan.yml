@@ -1,0 +1,52 @@
+# Variable Group 'tf-azdo-demo-kvlt0001' was defined in the Variables tab
+trigger:
+  branches:
+    include:
+    - refs/heads/AKS
+  paths:
+    include:
+    - terraform/
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: refs/heads/AKS
+jobs:
+- job: Job_1
+  displayName: Terraform Plan
+  pool:
+    vmImage: ubuntu-18.04
+  steps:
+  - checkout: self
+  - task: TerraformInstaller@0
+    displayName: Install Terraform 1.0.1
+    inputs:
+      terraformVersion: 1.0.1
+  - task: CmdLine@2
+    displayName: Terraform Init
+    inputs:
+      script: terraform init -backend-config="access_key=$(tfazdodemostg00-key1)"
+      workingDirectory: terraform
+  - task: CmdLine@2
+    displayName: Terraform validate
+    inputs:
+      script: terraform validate
+      workingDirectory: terraform
+  - task: CmdLine@2
+    displayName: Terraform Plan
+    inputs:
+      script: terraform plan -input=false -out=tfplan -var="spn-client-id=$(tf-azdo-demo-spn-client-id)" -var="spn-client-secret=$(tf-azdo-demo-spn-secret)" -var="spn-tenant-id=$(tf-azdo-demo-spn-tenant-id)"
+      workingDirectory: terraform
+  - task: ArchiveFiles@2
+    displayName: Archive Terraform Plan Files
+    inputs:
+      rootFolderOrFile: terraform
+      archiveType: tar
+      sevenZipCompression: 5
+      archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz
+  - task: PublishPipelineArtifact@1
+    displayName: Publish Terraform Plan Artifact
+    inputs:
+      path: $(Build.ArtifactStagingDirectory)/$(Build.BuildId)-tfplan.tgz
+      artifactName: $(Build.BuildId)-tfplan
+...

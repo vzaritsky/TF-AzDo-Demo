@@ -1,0 +1,33 @@
+# Variable Group 'tfazdodemokvlt0001' was defined in the Variables tab
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: refs/heads/AKS
+jobs:
+- job: Job_1
+  displayName: Terraform Status Check (Validate & Plan - No Out File)
+  pool:
+    vmImage: ubuntu-18.04
+  steps:
+  - checkout: self
+  - task: TerraformInstaller@0
+    displayName: Install Terraform 1.0.1
+    inputs:
+      terraformVersion: 1.0.1
+  - task: CmdLine@2
+    displayName: Terraform Init
+    inputs:
+      script: terraform init -backend-config="access_key=$(tfazdodemostg0002-key1)"
+      workingDirectory: terraform
+  - task: CmdLine@2
+    displayName: Terraform validate
+    inputs:
+      script: terraform validate
+      workingDirectory: terraform
+  - task: CmdLine@2
+    displayName: Terraform Plan
+    inputs:
+      script: terraform plan -input=false -var="spn-client-id=$(tf-azdo-demo-spn-client-id)" -var="spn-client-secret=$(tf-azdo-demo-spn-secret)" -var="spn-tenant-id=$(tf-azdo-demo-spn-tenant-id)"
+      workingDirectory: terraform
+...
